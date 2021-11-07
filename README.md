@@ -1,2 +1,2 @@
 # institute
-Fns Institute Frontend
+Fns Institute Frontend With FnSoftwares.com API
