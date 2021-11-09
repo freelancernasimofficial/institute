@@ -8,12 +8,13 @@ import {
 import { Box } from "@mui/system";
 import axios from "axios";
 import moment from "moment";
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { SocketContext } from "../../Contexts/Socket";
 import useFetch from "../../Hooks/useFetch";
 import CustomAvatar from "../CustomAvatar";
 import PageLoader from "../PageLoader";
-
+import { useSnackbar } from "notistack";
 const getActionMessage = (action) => {
     switch (action) {
       case "FRIEND_REQUEST":
@@ -34,6 +35,46 @@ const getActionMessage = (action) => {
 }
 
 const NotificationCard = () => {
+const socket = useContext(SocketContext);
+  const { enqueueSnackbar } = useSnackbar();
+
+
+  useEffect(() => {
+    socket.on("FRIEND_REQUEST", payload => {
+       enqueueSnackbar("XYZ Has sent you a Friend request", {
+         variant: "default",
+       });
+    })
+
+       socket.on("FOLLOW", (payload) => {
+         enqueueSnackbar("XYZ Following You", {
+           variant: "default",
+         });
+       });
+    
+     socket.on("UNFOLLOW", (payload) => {
+       enqueueSnackbar("XYZ Unfollowed You", {
+         variant: "default",
+       });
+     });
+    
+        socket.on("UNFRIEND", (payload) => {
+          enqueueSnackbar("XYZ Has Unfriended You", {
+            variant: "default",
+          });
+        });
+    
+        socket.on("CONFIRM_FRIEND_REQUEST", (payload) => {
+          enqueueSnackbar("XYZ Has Confirmed Your Request!", {
+            variant: "default",
+          });
+        });
+  
+  }, [enqueueSnackbar, socket]);
+
+
+
+
   const { data, status, refetch } = useFetch("/notifications");
   if (status === "LOADING") return <PageLoader />;
   return (

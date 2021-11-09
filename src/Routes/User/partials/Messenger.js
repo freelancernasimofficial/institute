@@ -7,7 +7,7 @@ import React, {
   useContext,
   useCallback,
 } from "react";
-import { Link, useParams, useHistory } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 
 import {
   Avatar,
@@ -19,6 +19,9 @@ import {
   TextField,
   IconButton,
   Typography,
+  Fade,
+  Grow,
+  Paper,
 } from "@mui/material";
 import { Box } from "@mui/system";
 import {
@@ -26,7 +29,6 @@ import {
   CameraAlt,
   CloseOutlined,
   InsertEmoticon,
-  MoreVert,
   Send,
   Videocam,
 } from "@mui/icons-material";
@@ -34,100 +36,123 @@ import { UserContext } from "../../../Contexts/AuthContext";
 import CustomAvatar from "../../../Components/CustomAvatar";
 import UserName from "../../../Components/UserName";
 import { MessengerContext } from "../../../Contexts/MessengerProvider";
-import useFetch from "../../../Hooks/useFetch";
 import { SocketContext } from "../../../Contexts/Socket";
-
+import Typing from "../../../Components/Typing";
+import { Picker } from "emoji-mart";
 const Messenger = ({ user }) => {
   const socket = useContext(SocketContext);
   const [currentChat, setCurrentChat] = useState([]);
   const [conversations, setConversations] = useState([]);
+ const [showEmoji, setShowEmoji] = useState(false);
   const scrollRef = useRef();
   const [newMessage, setNewMessage] = useState("");
-  const [typing, setTyping] = useState(false);
   const { currentUser } = useContext(UserContext);
   const history = useHistory();
   const [state, dispatch] = useContext(MessengerContext);
+  const [typing, setTyping] = useState(false);
+
+
+    const addEmoji = (e) => {
+      let sym = e.unified.split("-");
+      let codesArray = [];
+      sym.forEach((el) => codesArray.push("0x" + el));
+      let emoji = String.fromCodePoint(...codesArray);
+      setNewMessage((prev) => prev + emoji);
+    };
+
+
+  useEffect(() => {
+    socket.on("typing", (payload) => {
+      setTyping(true);
+    });
+    if (typing) {
+      setTimeout(() => {
+        setTyping(false);
+      }, 3000);
+    }
+  }, [socket, typing, newMessage]);
+
+  const handleTyping = () => {
+    socket.emit("typing", { emitTo: user.uuId, currentUser: currentUser });
+  };
 
   const fetch = useCallback(async () => {
     const res = await axios.get("/messages/conversation/", {
       params: {
-        uuId1: user.uuId + currentUser.uuId,
-        uuId2: currentUser.uuId + user.uuId,
+        uuId1: user?.uuId + currentUser?.uuId,
+        uuId2: currentUser?.uuId + user?.uuId,
       },
     });
-
+    console.log("called");
     setCurrentChat(res.data.currentChat);
     setConversations(res.data.conversations);
-  }, [currentUser.uuId, user.uuId]);
+  }, [currentUser?.uuId, user?.uuId]);
 
   useEffect(() => {
     fetch();
+    return () => {
+      setCurrentChat([]);
+      setConversations([]);
+    };
   }, [fetch]);
 
   const SendNewMessage = (e) => {
     e.preventDefault();
 
-    if (currentChat.length === 0) {
-      socket.emit("veryFirstMessage", {
-        emitTo: user.uuId,
-        personalRoom: currentUser.uuId,
-        inboxData: {
-          userId: user.id,
-          ownerId: currentUser.id,
-          uuId: currentUser.uuId + user.uuId,
+    if (currentChat?.length === 0) {
+      socket.emit(
+        "veryFirstMessage",
+        {
+          emitTo: user?.uuId,
+          inboxData: {
+            uuId: currentUser.uuId + user.uuId,
+            userId: user?.id,
+            ownerId: currentUser?.id,
+          },
+          messageData: {
+            uuId: currentUser.uuId + user.uuId,
+            userId: currentUser?.id,
+            text: newMessage,
+          },
         },
-        messageData: {
-          uuId: currentUser.uuId + user.uuId,
-          userId: currentUser.id,
-          text: newMessage,
-        },
-      });
+        (response) => {
+          fetch();
+        }
+      );
 
       setNewMessage("");
-      fetch();
     } else {
-      socket.emit("newMessage", {
-        emitTo: user.uuId,
-        data: {
-          uuId: currentChat.uuId,
-          userId: currentUser.id,
-          text: newMessage,
+      socket.emit(
+        "newMessage",
+        {
+          emitTo: user?.uuId,
+          data: {
+            userId: currentUser?.id,
+            text: newMessage,
+            uuId: currentChat?.uuId,
+          },
         },
-      });
+        (response) => {
+          
+          setConversations((prev) => prev.concat(response));
+        }
+      );
     }
 
     setNewMessage("");
-    
   };
 
   useEffect(() => {
     socket?.on("sendMessage", (payload) => {
-      // setConversations((prev) => {
-      //   return [...prev, ...payload];
-      // });
-
-
-        const fetch =async () => {
-          const res = await axios.get("/messages/conversation/", {
-            params: {
-              uuId1: user.uuId + currentUser.uuId,
-              uuId2: currentUser.uuId + user.uuId,
-            },
-          });
-
-          setCurrentChat(res.data.currentChat);
-          setConversations(res.data.conversations);
-        }
-      fetch()
-
-      
+      fetch();
     });
+  }, [fetch, socket]);
 
+  useEffect(() => {
     socket?.on("VeryFirstSendMessage", (payload) => {
-      setConversations((prev) => prev.concat(payload.conversations));
-      setCurrentChat(payload.currentChat);
+      fetch();
     });
-  }, [currentUser.uuId, socket, user.uuId]);
+  }, [fetch, socket]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -135,15 +160,14 @@ const Messenger = ({ user }) => {
 
   const handleCloseMessenger = (user) => {
     const filterFriends = state.friends.filter(
-      (friend) => friend.uuId !== user.uuId
+      (friend) => friend.uuId !== user?.uuId
     );
     dispatch({ type: "CLOSE_MESSENGER", payload: filterFriends });
   };
 
-
-    useEffect(() => {
-      socket.emit("joinChatRoom", currentChat.uuId);
-    }, [currentChat.uuId, socket]);
+  useEffect(() => {
+    socket.emit("joinChatRoom", currentChat?.uuId);
+  }, [currentChat?.uuId, socket]);
 
   let displayAvatar = true;
   let friendAvatarShow = true;
@@ -187,7 +211,7 @@ const Messenger = ({ user }) => {
         titleTypographyProps={{ sx: { p: 0, lineHeight: "20px" } }}
         avatar={<CustomAvatar user={user} />}
         title={<UserName user={user} />}
-        subheader={user.designation}
+        subheader={user?.designation}
         subheaderTypographyProps={{
           fontSize: "12px !important",
           lineHeight: "18px",
@@ -271,11 +295,12 @@ const Messenger = ({ user }) => {
                   overflow: "hidden",
                 }}
               >
-                {chatItem?.userId === currentUser.id ? (
+                {chatItem?.userId === currentUser?.id ? (
                   <>
                     <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
                       <Box
                         sx={{
+                          wordBreak: "break-word",
                           "&:before": {
                             content: '""',
                             borderRight: "15px solid transparent",
@@ -389,7 +414,7 @@ const Messenger = ({ user }) => {
                           position: "relative",
                         }}
                       >
-                        {chatItem.text}
+                        {chatItem?.text}
                       </Box>
                     </Box>
 
@@ -397,7 +422,7 @@ const Messenger = ({ user }) => {
                       variant="span"
                       sx={{ fontSize: 12, float: "left", mt: 2 }}
                     >
-                      {moment(chatItem.createdAt).fromNow()}{" "}
+                      {moment(chatItem?.createdAt).fromNow()}{" "}
                     </Box>
 
                     {(friendAvatarShow = false)}
@@ -410,19 +435,14 @@ const Messenger = ({ user }) => {
         )}
 
         <div ref={scrollRef}></div>
-
-        <div
-          className={`spinner4 chatTypeEffect ${
-            typing === true ? "animated fadeIn" : "animated fadeOut"
-          }`}
-        >
-          <div className="bounce1"></div>
-          <div className="bounce2"></div>
-          <div className="bounce3"></div>
-        </div>
       </CardContent>
 
-      <CardActions sx={{ p: 1 }}>
+      <CardActions sx={{ p: 1, position: "relative" }}>
+        <Typing
+          open={typing}
+          sx={{ position: "absolute", top: "-18px", left: "8px" }}
+        />
+
         <Box
           sx={{
             color: "white",
@@ -432,11 +452,16 @@ const Messenger = ({ user }) => {
           }}
         >
           <CameraAlt sx={{ mr: 2 }} color="white" />
-          <InsertEmoticon sx={{ mr: 2 }} color="white" />
+          <InsertEmoticon
+            onClick={() => setShowEmoji(!showEmoji)}
+            sx={{ mr: 2 }}
+            color="white"
+          />
         </Box>
         <Box sx={{ flex: 1 }}>
           <TextField
-            onChange={(e) => setNewMessage(e.target.value)}
+            onFocus={() => setShowEmoji(false)}
+            onChange={(e) => handleTyping() + setNewMessage(e.target.value)}
             variant="standard"
             placeholder="Type your message here..."
             type="text"
@@ -445,10 +470,35 @@ const Messenger = ({ user }) => {
             value={newMessage}
           />
         </Box>
+        {showEmoji && (
+          <Paper sx={{ position: "absolute", bottom: 50, left: 0 }}>
+            <Picker
+              emojiSize={32}
+              html={true}
+              onSelect={addEmoji}
+              showSkinTones={false}
+              title="Pick an Emoji"
+              showPreview={false}
+              useButton={false}
+              style={{
+                background: "#00000080",
+                width: "100%",
+                borderRadius: "0",
+                border: "none",
+              }}
+              theme="dark"
+              set="facebook"
+              i18n={{
+                search: "Search",
+                categories: { search: "Search", recent: "Recents" },
+              }}
+            />
+          </Paper>
+        )}
         <Box>
           <IconButton
             sx={{ padding: 0, m: 0, color: "text.primary" }}
-            onClick={SendNewMessage}
+            onClick={(e) => SendNewMessage(e) + setShowEmoji(false)}
             variant="contained"
             color="primary"
           >

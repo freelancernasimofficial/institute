@@ -58,7 +58,7 @@ const ShowUser = ({ inbox, user }) => {
                   variant="body2"
                   color="text.primary"
                 >
-                  {inbox.Messages[inbox.Messages.length - 1].text}
+                  {inbox.Messages[inbox.Messages.length - 1].text.substr(0,10)+"..."}
                 </Typography>
                 <Typography
                   component="span"
@@ -69,7 +69,9 @@ const ShowUser = ({ inbox, user }) => {
                     fontStyle: "italic",
                   }}
                 >
-                  {moment(inbox?.createdAt).fromNow()}
+                  {moment(
+                    inbox.Messages[inbox.Messages.length - 1].createdAt
+                  ).fromNow()}
                 </Typography>
               </React.Fragment>
             }
@@ -119,7 +121,7 @@ const ChatMessages = ({height,width}) => {
 
   const fetch = useCallback(async () => {
     const res = await axios.get("/messages/");
-    setData(res.data);
+    setData(res?.data);
   }, []);
 
   useEffect(() => {

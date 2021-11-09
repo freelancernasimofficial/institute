@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React from "react";
 import Newsfeed from "./Routes/Home/Newsfeed";
 import Login from "./Routes/Authentication/Login";
 import Register from "./Routes/Authentication/Register";
@@ -18,7 +18,6 @@ import Success from "./Routes/Commerce/Checkout/Success";
 import Failed from "./Routes/Commerce/Checkout/Failed";
 import Cancel from "./Routes/Commerce/Checkout/Cancel";
 import Router from "./Helpers/Router";
-import WebSocket from "./Contexts/Socket";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import AuthContext from "./Contexts/AuthContext";
 import MessengerProvider from "./Contexts/MessengerProvider";
@@ -27,12 +26,13 @@ import SocketProvider from "./Contexts/Socket";
 import DarkTheme from "./Components/Themes/DarkTheme";
 import { BrowserRouter,Route,Switch } from "react-router-dom";
 function App() {
+
   return (
     <ThemeProvider theme={DarkTheme}>
       <BrowserRouter>
         <CssBaseline />
-        <SocketProvider>
-          <AuthContext>
+        <AuthContext>
+          <SocketProvider>
             <MessengerProvider>
               <Layout>
                 <Switch>
@@ -88,8 +88,8 @@ function App() {
                 </Switch>
               </Layout>
             </MessengerProvider>
-          </AuthContext>
-        </SocketProvider>
+          </SocketProvider>
+        </AuthContext>
       </BrowserRouter>
     </ThemeProvider>
   );

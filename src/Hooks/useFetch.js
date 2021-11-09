@@ -43,8 +43,6 @@ const useFetch = (dataUrl,urlparams=null) => {
   }, [dataUrl]);
 
   const refetch = () => {
-       setStatus("LOADING");
-    setData([])
     axios
       .get(dataUrl, { params: urlparams })
       .then((response) => {

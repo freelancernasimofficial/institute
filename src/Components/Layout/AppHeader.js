@@ -1,12 +1,10 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
-import { styled, alpha } from "@mui/material/styles";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
-import InputBase from "@mui/material/InputBase";
 import Badge from "@mui/material/Badge";
 import MailIcon from "@mui/icons-material/Mail";
 import NotificationsIcon from "@mui/icons-material/Notifications";
@@ -22,12 +20,10 @@ import {
   Paper,
   TextField,
 } from "@mui/material";
-import Divider from "@mui/material/Divider";
 import { Link } from "react-router-dom";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
-import ListItemAvatar from "@mui/material/ListItemAvatar";
 import Avatar from "@mui/material/Avatar";
 import {
   AccountCircleOutlined,
@@ -39,49 +35,11 @@ import {
 
 import axios from "axios";
 
-import moment from "moment";
 import { UserContext } from "../../Contexts/AuthContext";
 import Notifications from "./Notifications";
 import ChatMessages from "./ChatMessages";
 require("dotenv").config();
-const Search = styled("div")(({ theme }) => ({
-  position: "relative",
-  borderRadius: theme.shape.borderRadius,
-  backgroundColor: alpha(theme.palette.common.white, 0.15),
-  "&:hover": {
-    backgroundColor: alpha(theme.palette.common.white, 0.25),
-  },
-  marginRight: theme.spacing(2),
-  marginLeft: 0,
-  width: "100%",
-  [theme.breakpoints.up("sm")]: {
-    marginLeft: theme.spacing(3),
-    width: "auto",
-  },
-}));
 
-const SearchIconWrapper = styled("div")(({ theme }) => ({
-  padding: theme.spacing(0, 2),
-  height: "100%",
-  position: "absolute",
-  pointerEvents: "none",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-}));
-
-const StyledInputBase = styled(InputBase)(({ theme }) => ({
-  color: "inherit",
-  "& .MuiInputBase-input": {
-    padding: theme.spacing(1, 1, 1, 0),
-    paddingLeft: `calc(1em + ${theme.spacing(4)})`,
-    transition: theme.transitions.create("width"),
-    width: "100%",
-    [theme.breakpoints.up("md")]: {
-      width: "20ch",
-    },
-  },
-}));
 
 const AppHeader = () => {
   const [showMessages, setShowMessages] = useState(false);
@@ -90,6 +48,8 @@ const AppHeader = () => {
   const { currentUser } = useContext(UserContext);
   const [chatList, setChatlist] = useState(null);
   const [notifications, setNotification] = useState(null);
+
+
   const seenNotifications = (e) => {
     axios
       .get("/notifications", {
@@ -112,9 +72,16 @@ const AppHeader = () => {
       setShowNotification(false);
       setShowProfile(false);
     });
+    return () => {
+      setShowMessages(false);
+      setShowNotification(false);
+      setShowProfile(false);
+    };
   }, []);
   const handleLogout = (e) => {
-    window.location.href = process.env.REACT_APP_LOGOUT_API;
+    axios.get('/logout').then((res) => {
+      history.push('/login')
+    })
   };
 
   return (
@@ -454,7 +421,10 @@ const AppHeader = () => {
                       p: 2,
                     }}
                   >
-                    <Link onClick={(e) => handleLogout() + e.preventDefault()} to="/#">
+                    <Link
+                      onClick={(e) => handleLogout() + e.preventDefault()}
+                      to="/#"
+                    >
                       <Typography
                         align="center"
                         variant="h6"

@@ -42,121 +42,108 @@ import { UserContext } from "../../Contexts/AuthContext";
 import { Link } from "react-router-dom";
 import MoreVert from "@mui/icons-material/MoreVert";
 import { MessengerContext } from "../../Contexts/MessengerProvider";
+import { SocketContext } from "../../Contexts/Socket";
 
 const Profile = () => {
   const [partial, setPartial] = useState("TIMELINE");
   const [value, setValue] = useState(0);
   const [postForm, setPostForm] = useState(true);
-  const [messengerOpen, setMessengerOpen] = useState(false);
   const params = useParams();
   const { enqueueSnackbar } = useSnackbar();
-  const { currentUser, socket } = useContext(UserContext);
-  const { data, status, refetch } = useFetch("/user/" + params?.id);
+  const { currentUser } = useContext(UserContext);
+  const socket = useContext(SocketContext);
+  const { data, status, refetch } = useFetch(window.location.pathname);
   const [state, dispatch] = useContext(MessengerContext);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
   const history = useHistory();
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const open = Boolean(anchorEl);
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleClose = () => {
-    setAnchorEl(null);
+  const anchorEl = React.useRef(null);
+  const [open, setOpen] = useState(false)
+  
+  const handleClick = () => {
+    setOpen(!open)
   };
 
+
   const addFriend = () => {
-    axios
-      .post(`/user/${data.id}/friends`, {
-        id: data?.id,
-      })
-      .then((response) => {
-        enqueueSnackbar("Request sent", { variant: "info" });
+    socket.emit(
+      "FRIEND_REQUEST",
+      {
+        roomId: data.uuId,
+        userId: data?.id,
+        currentUser,
+      },
+      (response) => {
+        console.log('addFriend', response);
+        enqueueSnackbar("Request sent", { variant: "default" });
         refetch();
-      })
-      .catch((error) => {
-        enqueueSnackbar("Something went wrong...", { variant: "warning" });
-      });
+      }
+    );
   };
 
   const unFriend = () => {
-    axios
-      .delete(`/user/${data.id}/friends`, {
-        params: {
-          id: data?.id,
-        },
-      })
-      .then((response) => {
-        enqueueSnackbar("Unfriend Done", { variant: "info" });
+    socket.emit(
+      "UNFRIEND",
+      { roomId: data.uuId, userId: data?.id, currentUser },
+      (response) => {
+        console.log("unfriend", response);
+        enqueueSnackbar("Unfriend Done", { variant: "default" });
         refetch();
-      })
-      .catch((error) => {
-        enqueueSnackbar("Something went wrong...", { variant: "warning" });
-      });
+      }
+    );
   };
 
   const confirmFriend = () => {
-    axios
-      .put(`/user/${data.id}/friends`, {
-        id: data?.id,
-      })
-      .then((response) => {
-        enqueueSnackbar("Confirmed Request", { variant: "info" });
+    socket.emit(
+      "CONFIRM_FRIEND_REQUEST",
+      { roomId: data.uuId, userId: data?.id, currentUser },
+      (response) => {
+        console.log("confirmFriend", response);
+        enqueueSnackbar("Confirmed Request", { variant: "default" });
         refetch();
-      })
-      .catch((error) => {
-        enqueueSnackbar("Something went wrong...", { variant: "warning" });
-      });
+      }
+    );
   };
 
   const follow = () => {
-    axios
-      .post(`/user/${data.id}/followers`, {
-        id: data.id,
-      })
-      .then((response) => {
-        enqueueSnackbar("Following", { variant: "info" });
+    socket.emit(
+      "FOLLOW",
+      { roomId: data.uuId, userId: data.id, currentUser },
+      (response) => {
+        console.log("follow", response);
+        enqueueSnackbar("Following", { variant: "default" });
         refetch();
-      })
-      .catch((error) => {
-        enqueueSnackbar("Something went wrong...", { variant: "warning" });
-      });
+      }
+    );
   };
   const unFollow = () => {
-    axios
-      .delete(`/user/${data.id}/followers`, {
-        params: {
-          id: data.id,
-        },
-      })
-      .then((response) => {
-        enqueueSnackbar("Unfollow Done", { variant: "info" });
+    socket.emit(
+      "UNFOLLOW",
+      {
+        userId: data.id,
+        roomId: data.uuId,
+        currentUser,
+      },
+      (response) => {
+        enqueueSnackbar("Unfollow Done", { variant: "default" });
         refetch();
-      })
-      .catch((error) => {
-        enqueueSnackbar("Something went wrong...", { variant: "warning" });
-      });
+      }
+    );
   };
 
   const handleOpenMessenger = (user) => {
+    const filterCurrentFriends = state.friends.filter(
+      (friend) => friend.uuId === data.uuId
+    );
 
-
-
-      const filterCurrentFriends = state.friends.filter(
-        (friend) => friend.uuId === data.uuId
-      );
-
-      if (!filterCurrentFriends.length > 0) {
-        dispatch({
-          type: "OPEN_MESSENGER",
-          payload: data,
-        });
-      }
-
- 
-
+    if (!filterCurrentFriends.length > 0) {
+      dispatch({
+        type: "OPEN_MESSENGER",
+        payload: data,
+      });
+    }
   };
 
   if (status === "LOADING") return <PageLoader />;
@@ -318,14 +305,18 @@ const Profile = () => {
             >
               Message
             </Button>
-            <IconButton sx={{ m: 0, p: 0 }} onClick={handleClick}>
+            <IconButton
+              ref={anchorEl}
+              sx={{ m: 0, p: 0 }}
+              onClick={handleClick}
+            >
               <MoreVert />
             </IconButton>
 
             <Menu
-              anchorEl={anchorEl}
+              anchorEl={anchorEl.current}
               open={open}
-              onClose={handleClose}
+              onClose={handleClick}
               anchorOrigin={{
                 vertical: "top",
                 horizontal: "left",
@@ -335,16 +326,18 @@ const Profile = () => {
                 horizontal: "left",
               }}
             >
-              <MenuItem onClick={handleClose}>
+              <MenuItem onClick={handleClick}>
                 <Link to={`/user/${data.username || data.uuId}`}>
-                  Visit Profile
+                  Block
                 </Link>
               </MenuItem>
               {data.isMyFriend > 0 && (
-                <MenuItem onClick={unFriend}>Unfriend</MenuItem>
+                <MenuItem onClick={() => unFriend() + handleClick()}>
+                  Unfriend
+                </MenuItem>
               )}
               {data.isMeFollowing > 0 && data.isMyFollower > 0 && (
-                <MenuItem onClick={unFollow}>Unfollow</MenuItem>
+                <MenuItem onClick={() => unFollow()+ handleClick()}>Unfollow</MenuItem>
               )}
             </Menu>
           </CardActions>

@@ -3,13 +3,12 @@ import ReactDOM from "react-dom";
 import Axios from "axios";
 import App from "./App";
 require("dotenv").config();
-Axios.defaults.baseURL = process.env.REACT_APP_API;
+Axios.defaults.baseURL =
+  window.location.hostname === "lessonlover.com"
+    ? process.env.REACT_APP_LIVE_API
+    : process.env.REACT_APP_LOCAL_API;
 Axios.defaults.withCredentials = true;
-Axios.defaults.headers = {
-  Accept: "application/json",
-  "Access-Control-Allow-Origin": "*",
-  "Content-Type": "application/json",
-};
+
 
 ReactDOM.render(
   <React.StrictMode>

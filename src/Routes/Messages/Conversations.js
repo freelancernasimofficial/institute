@@ -41,7 +41,8 @@ import {
 import { UserContext } from "../../Contexts/AuthContext";
 import { SocketContext } from "../../Contexts/Socket";
 import PageLoader from "../../Components/PageLoader";
-
+import Typing from "../../Components/Typing";
+import { Picker } from "emoji-mart";
 const Conversations = () => {
   const [currentChat, setCurrentChat] = useState(null);
   const [messagesList, setMessagesList] = useState(null);
@@ -53,25 +54,53 @@ const Conversations = () => {
   const { currentUser } = useContext(UserContext);
   const history = useHistory();
   const socket = useContext(SocketContext);
-
-
-
-
-
-  const fetchMessages = async () => {
-    const response = await axios.get(window.location.pathname);
-    setMessagesList(response.data.messages);
-    setCurrentChat(response.data.inbox);
-  }
+ const [showEmoji, setShowEmoji] = useState(false);
+    const addEmoji = (e) => {
+      let sym = e.unified.split("-");
+      let codesArray = [];
+      sym.forEach((el) => codesArray.push("0x" + el));
+      let emoji = String.fromCodePoint(...codesArray);
+      setNewMessage((prev) => prev + emoji);
+    };
 
   useEffect(() => {
-     const fetchMessages = async () => {
-       const response = await axios.get(window.location.pathname);
-       setMessagesList(response.data.messages);
-       setCurrentChat(response.data.inbox);
-     };
-    fetchMessages()
-  }, [history.location.pathname]);
+    socket.on("typing", (payload) => {
+      setTyping(true);
+    });
+    if (typing) {
+      setTimeout(() => {
+        setTyping(false);
+      }, 3000);
+    }
+  }, [socket, typing, newMessage]);
+
+  const handleTyping = () => {
+    if (currentChat?.userId === currentUser?.id) {
+      socket.emit("typing", {
+        emitTo: currentChat?.owner.uuId,
+        currentUser: currentUser,
+      });
+    }
+    if (currentChat?.ownerId === currentUser?.id) {
+      socket.emit("typing", {
+        emitTo: currentChat?.User.uuId,
+        currentUser: currentUser,
+      });
+    }
+  };
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      const response = await axios.get(window.location.pathname);
+      setMessagesList(response.data.messages);
+      setCurrentChat(response.data.inbox);
+    };
+    fetchMessages();
+
+    socket?.on("sendMessage", (payload) => {
+      fetchMessages();
+    });
+  }, [socket]);
 
   useEffect(() => {
     setWinHeight(window.innerHeight - 150);
@@ -90,29 +119,23 @@ const Conversations = () => {
         ? currentChat.User?.uuId
         : currentChat.owner?.uuId;
 
-    socket.emit("newMessage", {
-      emitTo: emitTo,
-      personalRoom:currentUser?.uuId,
-      data: {
-        uuId: currentChat?.uuId,
-        userId: currentUser.id,
-        text: newMessage,
+    socket.emit(
+      "newMessage",
+      {
+        emitTo: emitTo,
+        personalRoom: currentUser?.uuId,
+        data: {
+          uuId: currentChat?.uuId,
+          userId: currentUser.id,
+          text: newMessage,
+        },
       },
-    });
+      (response) => {
+        setMessagesList((prev) => prev.concat(response));
+      }
+    );
     setNewMessage("");
-    // fetchMessages();
   };
-
-  useEffect(() => {
-    socket?.on("sendMessage", (payload) => {
-         const fetchMessages = async () => {
-           const response = await axios.get(window.location.pathname);
-           setMessagesList(response.data.messages);
-           setCurrentChat(response.data.inbox);
-         };
-      fetchMessages()
-    });
-  }, [messagesList, socket]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -123,9 +146,8 @@ const Conversations = () => {
 
   useEffect(() => {
     socket.emit("joinChatRoom", currentChat?.uuId);
-  
   }, [currentChat?.uuId, socket]);
-if (!currentChat || !messagesList) return <PageLoader/>
+  if (!currentChat || !messagesList) return <PageLoader />;
   return (
     <Card
       elevation={1}
@@ -315,8 +337,8 @@ if (!currentChat || !messagesList) return <PageLoader/>
                   <>
                     <Box sx={{ display: "flex", justifyContent: "flex-start" }}>
                       {friendAvatarShow === true ? (
-                        currentChat?.owner?.avatar ? (
-                          <Avatar src={currentChat?.owner?.avatar} />
+                        chatItem?.User?.avatar ? (
+                          <Avatar src={chatItem?.User?.avatar} />
                         ) : (
                           <Avatar
                             sx={{
@@ -324,7 +346,7 @@ if (!currentChat || !messagesList) return <PageLoader/>
                               color: "text.primary",
                             }}
                           >
-                            {currentChat?.owner?.firstName?.substr(0, 1)}
+                            {chatItem?.User?.firstName?.substr(0, 1)}
                           </Avatar>
                         )
                       ) : (
@@ -335,12 +357,13 @@ if (!currentChat || !messagesList) return <PageLoader/>
                             color: "text.primary",
                           }}
                         >
-                          {currentChat?.owner?.firstName?.substr(0, 1)}
+                          {chatItem?.User?.firstName?.substr(0, 1)}
                         </Avatar>
                       )}
 
                       <Box
                         sx={{
+                          wordBreak: "break-word !important",
                           "&:before": {
                             content: '""',
                             borderLeft: "15px solid transparent",
@@ -399,6 +422,7 @@ if (!currentChat || !messagesList) return <PageLoader/>
       >
         <Paper
           sx={{
+            position: "relative",
             pt: 2,
             boxShadow: 0,
             width: "100%",
@@ -410,8 +434,37 @@ if (!currentChat || !messagesList) return <PageLoader/>
             borderColor: "background.paper",
           }}
         >
+          {showEmoji && (
+            <Paper sx={{ position: "absolute", bottom: 100, left: 0 }}>
+              <Picker
+                emojiSize={32}
+                onSelect={addEmoji}
+                showSkinTones={false}
+                title="Pick an Emoji"
+                showPreview={false}
+                useButton={false}
+                style={{
+                  background: "#00000080",
+                  width: "100%",
+                  borderRadius: "0",
+                  border: "none",
+                }}
+                theme="dark"
+                set="facebook"
+                i18n={{
+                  search: "Search",
+                  categories: { search: "Search", recent: "Recents" },
+                }}
+              />
+            </Paper>
+          )}
+          <Typing
+            open={typing}
+            sx={{ position: "absolute", top: "-18px", left: "8px" }}
+          />
           <TextField
-            onChange={(e) => setNewMessage(e.target.value)}
+            onFocus={() => setShowEmoji(false)}
+            onChange={(e) => handleTyping() + setNewMessage(e.target.value)}
             variant="standard"
             placeholder="Type your message here..."
             type="text"
@@ -429,7 +482,11 @@ if (!currentChat || !messagesList) return <PageLoader/>
               }}
             >
               <CameraAlt sx={{ mr: 2 }} color="white" />
-              <InsertEmoticon sx={{ mr: 2 }} color="white" />
+              <InsertEmoticon
+                onClick={() => setShowEmoji(!showEmoji)}
+                sx={{ mr: 2 }}
+                color="white"
+              />
               <AttachFile sx={{ mr: 2 }} color="white" />
             </Box>
             <Button

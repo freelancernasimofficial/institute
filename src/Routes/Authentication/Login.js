@@ -48,6 +48,7 @@ const Login = (props) => {
           password: password,
         })
           .then((res) => {
+            console.log(res);
             setLoading(false);
             setSuccess(true);
 
@@ -62,7 +63,7 @@ const Login = (props) => {
               </Alert>
             );
             setTimeout(() => {
-              window.location.href = "/";
+            window.location.href = "/";
             }, 1000);
           })
           .catch((error) => {
