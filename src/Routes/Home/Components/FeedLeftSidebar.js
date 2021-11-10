@@ -1,7 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import Typography from "@mui/material/Typography";
 import {
-  CircularProgress,
   ListItem,
   ListItemText,
   ListSubheader,

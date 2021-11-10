@@ -176,7 +176,7 @@ const Register = () => {
       <Paper elevation={1} sx={{ p: 4 }}>
         <Paper sx={{ p: 2, textAlign: "center", mb:2 }} elevation={0}>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            Welcome to Bangladesh!
+           Register Account
           </Typography>
         </Paper>
 

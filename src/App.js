@@ -17,79 +17,92 @@ import AllNotifications from "./Routes/Notifications/AllNotifications";
 import Success from "./Routes/Commerce/Checkout/Success";
 import Failed from "./Routes/Commerce/Checkout/Failed";
 import Cancel from "./Routes/Commerce/Checkout/Cancel";
-import Router from "./Helpers/Router";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import AuthContext from "./Contexts/AuthContext";
 import MessengerProvider from "./Contexts/MessengerProvider";
 import Layout from "./Components/Layout/Layout";
 import SocketProvider from "./Contexts/Socket";
 import DarkTheme from "./Components/Themes/DarkTheme";
-import { BrowserRouter,Route,Switch } from "react-router-dom";
-function App() {
+import { BrowserRouter, Route, Switch } from "react-router-dom";
 
+function App() {
   return (
     <ThemeProvider theme={DarkTheme}>
       <BrowserRouter>
         <CssBaseline />
-        <AuthContext>
-          <SocketProvider>
-            <MessengerProvider>
-              <Layout>
-                <Switch>
-                  <Router exact path="/" view={Newsfeed} />
-                  <Route exact path="/login">
-                    <Login />
+        <Switch>
+          {/*=========== PUBLIC ROUTES ========== */}
+          <Route exact path="/login">
+            <Login />
+          </Route>
+          <Route exact path="/register">
+            <Register />
+          </Route>
+          {/*=========== PUBLIC ROUTES ========== */}
+
+          {/*=========== PRIVATE ROUTES ========== */}
+          <AuthContext>
+            <SocketProvider>
+              <MessengerProvider>
+                <Layout>
+                  <Route exact path="/">
+                    <Newsfeed />
                   </Route>
-                  <Route exact path="/register">
-                    <Register />
+
+                  <Route exact path="/user/:id">
+                    <Profile />
                   </Route>
-                  <Router exact path="/user/:id" view={Profile} />
-                  <Router exact path="/admissions" view={Admissions} />
-                  <Router
-                    exact
-                    path="/admissions/lessons/:id"
-                    view={LessonOverview}
-                  />
-                  <Router exact path="/messages" view={Messages} />
-                  <Router exact path="/notifications" view={AllNotifications} />
-                  <Router
-                    exact
-                    path="/messages/inbox/conversations/:id"
-                    view={ConversationsBody}
-                  />
-                  <Router exact path="/user/:id/edit" view={EditProfile} />
-                  <Router
-                    exact
-                    path="/financial/balance/deposit"
-                    view={Deposit}
-                  />
-                  <Router
-                    exact
-                    path="/financial/transactions"
-                    view={Transactions}
-                  />
-                  <Router exact path="/orders" view={Orders} />
-                  <Router exact path="/courses" view={Courses} />
-                  <Router
-                    exact
-                    path="/courses/overview/:uuId"
-                    view={CourseSingle}
-                  />
+                  <Route exact path="/admissions">
+                    <Admissions />
+                  </Route>
+                  <Route exact path="/admissions/lessons/:id">
+                    <LessonOverview />
+                  </Route>
+                  <Route exact path="/messages">
+                    <Messages />
+                  </Route>
+                  <Route exact path="/notifications">
+                    <AllNotifications />
+                  </Route>
+                  <Route exact path="/messages/inbox/conversations/:id">
+                    <ConversationsBody />
+                  </Route>
+                  <Route exact path="/user/:id/edit">
+                    <EditProfile />
+                  </Route>
+                  <Route exact path="/financial/balance/deposit">
+                    <Deposit />
+                  </Route>
+                  <Route exact path="/financial/transactions">
+                    <Transactions />
+                  </Route>
+                  <Route exact path="/orders">
+                    <Orders />
+                  </Route>
+                  <Route exact path="/courses">
+                    <Courses />
+                  </Route>
+                  <Route exact path="/courses/overview/:uuId">
+                    <CourseSingle />
+                  </Route>
 
                   {/* //GATEWAY PAGE URLS */}
 
-                  <Router
-                    exact
-                    path="/gateway/payment/success"
-                    view={Success}
-                  />
-                  <Router exact path="/gateway/payment/failed" view={Failed} />
-                  <Router exact path="/gateway/payment/cancel" view={Cancel} />
-                </Switch>
-              </Layout>
-            </MessengerProvider>
-          </SocketProvider>
-        </AuthContext>
+                  <Route exact path="/gateway/payment/success">
+                    <Success />
+                  </Route>
+                  <Route exact path="/gateway/payment/failed">
+                    <Failed />
+                  </Route>
+                  <Route exact path="/gateway/payment/cancel">
+                    <Cancel />
+                  </Route>
+                </Layout>
+              </MessengerProvider>
+            </SocketProvider>
+          </AuthContext>
+          {/*=========== PRIVATE ROUTES =========== */}
+        </Switch>
       </BrowserRouter>
     </ThemeProvider>
   );

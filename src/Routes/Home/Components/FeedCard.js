@@ -163,7 +163,11 @@ const FeedCard = ({ post, refetch, maxWidth = "600px" }) => {
             )}
           </CardContent>
           {state?.sharedPostId === null && state?.thumbnail && (
-            <CardMedia component="img" image={state?.thumbnail} alt="emanus" />
+            <CardMedia
+              component="img"
+              image={state?.thumbnail}
+              alt="thumbnail"
+            />
           )}
           <Box
             component="div"
@@ -181,7 +185,6 @@ const FeedCard = ({ post, refetch, maxWidth = "600px" }) => {
                 justifyContent: "flex-start",
               }}
             >
-             
               {state?.TotalReactions > 0 ? (
                 <React.Fragment>
                   <Typography
@@ -271,12 +274,10 @@ const FeedCard = ({ post, refetch, maxWidth = "600px" }) => {
             </IconButton>
             <IconButton
               onClick={() =>
-                
                 dispatch({
                   type: "COMMENT_BUTTON",
                   payload: { showComment: false },
-                }) +
-                setSharing(!sharing)
+                }) + setSharing(!sharing)
               }
               sx={{
                 color: "text.secondary",

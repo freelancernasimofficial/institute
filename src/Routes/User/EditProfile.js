@@ -4,7 +4,6 @@ import { useContext } from "react";
 import { UserContext } from "../../Contexts/AuthContext";
 import { useEffect } from "react";
 import axios from "axios";
-import UploadFile from "../../Components/UploadFile";
 import { Box } from "@mui/system";
 import {
   Button,
@@ -84,7 +83,7 @@ const EditProfile = () => {
         enqueueSnackbar("Something went wrong!", { variant: "warning" });
       })
       .finally(() => {
-        history.push(`/user/${data.username || data.uuId}`);
+        history.push(`/user/${currentUser.username || currentUser.uuId}`);
       });
   };
 
@@ -185,16 +184,16 @@ const EditProfile = () => {
               />
             </CardContent>
             <CardActions>
-              <Link onClick={(e) => handleChangePassword(e)} to="#">
-                <Button
-                  startIcon={<Save />}
-                  variant="contained"
-                  color="primary"
-                >
-                  Change
-                </Button>
-              </Link>
-              <Link to={`/user/${state.uuId}`}>
+              <Button
+                onClick={(e) => handleChangePassword(e)}
+                startIcon={<Save />}
+                variant="contained"
+                color="primary"
+              >
+                Change
+              </Button>
+
+              <Link to={`/user/${currentUser.username || currentUser.uuId}`}>
                 <Button
                   startIcon={<Cancel />}
                   variant="contained"
@@ -616,13 +615,11 @@ const EditProfile = () => {
                     Save
                   </Button>
                   <Button
+                    href={`/user/${currentUser.username || currentUser.uuId}`}
                     type="submit"
                     variant="contained"
                     startIcon={<Cancel />}
                     color="error"
-                    onClick={() =>
-                      history.push(`/user/${data.username || data.uuId}`)
-                    }
                   >
                     Cancle
                   </Button>

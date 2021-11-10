@@ -29,19 +29,20 @@ const Timeline = ({ userId, ...rest }) => {
   const { currentUser } = useContext(UserContext);
   const [postForm, setPostForm] = useState(true);
   const [timelinePosts, setTimelinePosts] = useState([]);
-  const { data,status, refetch } = useFetch(`/user/${userId}/timeline`);
+
+  const fetchData = useCallback(async () => {
+       setTimelinePosts("LOADING");
+      const resposne = await axios.get(`/user/${userId}/timeline`);
+      setTimelinePosts(resposne.data);
+    }, [userId]);
 
   useEffect(() => {
+      fetchData();
     setPostForm(rest.postForm)
 
-  }, [rest]);
+  }, [fetchData, rest.postForm]);
 
-  useEffect(() => {
-    setTimelinePosts(data);
-    return () => {
-      setTimelinePosts([]);
-    };
-  }, [data]);
+
 const themeColors = [
   "primary.main",
   "error.main",
@@ -94,7 +95,7 @@ const themeColors = [
   "orange",
   "purple",
 ];
-  if (status === "LOADING") return <PageLoader />;
+  if (timelinePosts === "LOADING") return <PageLoader />;
   return (
     <React.Fragment>
       <Grid
@@ -396,7 +397,7 @@ const themeColors = [
               </Paper>
             ) : (
               <PostForm
-                refetch={refetch}
+                refetch={fetchData}
                 close={() => setPostForm(true) + rest.setPostForm(true)}
               />
             ))}
@@ -405,7 +406,7 @@ const themeColors = [
             return (
               <FeedCard
                 maxWidth="100% !important"
-                refetch={refetch}
+                refetch={fetchData}
                 key={key}
                 post={post}
               />

@@ -72,9 +72,7 @@ const FeedCardShared = ({ sharedPost }) => {
           </Typography>
         </CardContent>
         <CardMedia
-          
           component="img"
-          
           image={sharedPost?.thumbnail}
           alt="Paella dish"
         />

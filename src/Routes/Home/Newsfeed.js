@@ -3,6 +3,7 @@ import React, {
   useContext,
   useEffect,
   useReducer,
+  useRef,
   useState,
 } from "react";
 import Grid from "@mui/material/Grid";
@@ -24,14 +25,54 @@ import {
   Videocam,
 } from "@mui/icons-material";
 import { Emoji } from "emoji-mart";
+import axios from "axios";
 
 const Newsfeed = () => {
   const { currentUser } = useContext(UserContext);
   const [isPosting, setisPosting] = useState(false);
-  const { data, status, refetch } = useFetch(`/`);
+  const [posts, setPosts] = useState([]);
+  const [offset, setoffset] = useState(5);
 
-  if (status !== "OK") return <PageLoader />;
-  
+  const fetchData = useCallback(async () => {
+    setPosts("LOADING");
+    const resposne = await axios.get("/", {
+      params: {
+        offset: 5,
+      },
+    });
+
+    setPosts(resposne.data);
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  ///////infitizen
+
+  const handleScroll = (e) => {
+    if (e.currentTarget.scrollTop + 700 > e.currentTarget.scrollHeight) {
+      const loadMore = async () => {
+        const response = await axios.get("/", {
+          params: {
+            offset: posts.length + 5,
+          },
+        });
+
+        if (response) {
+          setPosts((prev) => [...prev, ...response.data]);
+        }
+      };
+      loadMore();
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  if (posts.length < 0) return <PageLoader />;
+
   return (
     <Grid
       container
@@ -62,6 +103,7 @@ const Newsfeed = () => {
       </Grid>
 
       <Grid
+        onScroll={handleScroll}
         sx={{ overflow: "scroll", height: "100%", p: "0", pt: "20px" }}
         item
         sm={12}
@@ -189,13 +231,13 @@ const Newsfeed = () => {
         )}
 
         {isPosting && (
-          <PostForm refetch={refetch} close={() => setisPosting(false)} />
+          <PostForm refetch={fetchData} close={() => setisPosting(false)} />
         )}
 
-        {Array.isArray(data) && (
+        {Array.isArray(posts) && (
           <React.Fragment>
-            {data?.map((post, key) => {
-              return <FeedCard refetch={refetch} key={key} post={post} />;
+            {posts?.map((post, key) => {
+              return <FeedCard refetch={fetchData} key={key} post={post} />;
             })}
           </React.Fragment>
         )}

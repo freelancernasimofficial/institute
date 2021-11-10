@@ -84,37 +84,7 @@ const ShowUser = ({ inbox, user }) => {
 };
 
 
-
-const StyledBadge = styled(Badge)(({ theme }) => ({
-  "& .MuiBadge-badge": {
-    backgroundColor: "#44b700",
-    color: "#44b700",
-    boxShadow: `0 0 0 2px ${theme.palette.background.paper}`,
-    "&::after": {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      width: "100%",
-      height: "100%",
-      borderRadius: "50%",
-      animation: "ripple 1.2s infinite ease-in-out",
-      border: "1px solid currentColor",
-      content: '""',
-    },
-  },
-  "@keyframes ripple": {
-    "0%": {
-      transform: "scale(.8)",
-      opacity: 1,
-    },
-    "100%": {
-      transform: "scale(2.4)",
-      opacity: 0,
-    },
-  },
-}));
-
-const ChatMessages = ({height,width}) => {
+const ChatMessages = ({height,width,sx}) => {
   const { currentUser } = useContext(UserContext);
   const [data, setData] = useState(null);
   const socket = useContext(SocketContext);
@@ -158,7 +128,9 @@ if(!data) return <PageLoader/>
         overflow: "hidden",
         width: "100%",
         position: "relative",
+
         height: height || winHeight,
+        ...sx,
       }}
     >
       <CardHeader title="Messenger" />
@@ -176,24 +148,26 @@ if(!data) return <PageLoader/>
 
       <CardContent
         sx={{
+          border: "1px solid #2a2b2c",
           bgcolor: "background.default",
           overflow: "auto",
           height: height || winHeight,
         }}
       >
         <List sx={{ width: "100%", p: 0 }}>
-          {data && data?.map((inbox, key) => {
-            return (
-              <React.Fragment key={key}>
-                {inbox.ownerId === currentUser.id && (
-                  <ShowUser inbox={inbox} user={inbox.User} />
-                )}
-                {inbox.userId === currentUser.id && (
-                  <ShowUser inbox={inbox} user={inbox.owner} />
-                )}
-              </React.Fragment>
-            );
-          })}
+          {data &&
+            data?.map((inbox, key) => {
+              return (
+                <React.Fragment key={key}>
+                  {inbox.ownerId === currentUser.id && (
+                    <ShowUser inbox={inbox} user={inbox.User} />
+                  )}
+                  {inbox.userId === currentUser.id && (
+                    <ShowUser inbox={inbox} user={inbox.owner} />
+                  )}
+                </React.Fragment>
+              );
+            })}
         </List>
       </CardContent>
     </Card>

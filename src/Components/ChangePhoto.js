@@ -32,16 +32,12 @@ import {
 import { Box } from "@mui/system";
 import { styled } from "@mui/material/styles";
 import axios from "axios";
-import React, { useContext, useState } from "react";
+import React, {useState } from "react";
 import { useSnackbar } from "notistack";
 import "emoji-mart/css/emoji-mart.css";
-import { Picker } from "emoji-mart";
-
-import MoreVert from "@mui/icons-material/MoreVert";
-import CustomAvatar from "./CustomAvatar";
-import { UserContext } from "../Contexts/AuthContext";
-import UserName from "./UserName";
+import Compressor from "compressorjs";
 import PhotoPreviewer from "./PhotoPreviewer";
+import PageLoader from "./PageLoader";
 
 const Input = styled("input")({
   display: "none",
@@ -50,6 +46,26 @@ const ChangePhoto = ({ params, name }) => {
   const [image, setImage] = useState(null);
   const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(false);
+
+
+  const handleCompressedUpload = (e) => {
+    setImage("converting")
+    const image = e.target.files[0];
+    new Compressor(image, {
+      maxWidth: 1280,
+      convertSize: Infinity,
+      convertTypes: ["image/jpg"],
+      quality: 0.8, // 0.6 can also be used, but its not recommended to go below.
+      success: (compressedResult) => {
+        // compressedResult has the compressed file.
+        // Use the compressed file to upload the images to your server.
+        const myFile = new File([compressedResult], "image.jpeg", {
+          type: compressedResult.type,
+        });
+        setImage(myFile);
+      },
+    });
+  };
 
   const handlePost = (e) => {
     e.preventDefault();
@@ -87,14 +103,16 @@ const ChangePhoto = ({ params, name }) => {
       >
         <Divider variant="fullWidth" />
         <CardContent sx={{ p: 0, bgcolor: "background.default" }}>
-          {image !== null && (
-            <PhotoPreviewer width={"100%"} src={URL.createObjectURL(image)} />
+          {image === "converting" && <PageLoader />}
+          {image !== null && image !== "converting" && (
+            <PhotoPreviewer src={URL?.createObjectURL(image)} />
           )}
+      
         </CardContent>
         <CardActions sx={{ justifyContent: "flex-end", p: 1 }}>
           <label htmlFor="icon-button-file">
             <Input
-              onChange={(e) => setImage(e.currentTarget.files[0])}
+              onChange={(e) => handleCompressedUpload(e)}
               accept="image/*"
               id="icon-button-file"
               type="file"

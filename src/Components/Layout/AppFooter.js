@@ -47,17 +47,17 @@ const AppFooter = () => {
             />
           </Button>
 
-          <Button>
-            <Link to="/">
+          <Link to="/">
+            <Button>
               <Home sx={{ color: "text.primary" }} />
-            </Link>
-          </Button>
-          <Button>
-            {" "}
-            <Link to="/messages">
+            </Button>
+          </Link>
+          <Link to="/messages">
+            <Button>
+              {" "}
               <Mail sx={{ color: "text.primary" }} />
-            </Link>
-          </Button>
+            </Button>
+          </Link>
         </Stack>
       </Paper>
       <Drawer

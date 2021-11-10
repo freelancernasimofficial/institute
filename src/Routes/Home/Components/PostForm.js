@@ -32,7 +32,7 @@ import {
 import { Box } from "@mui/system";
 import { styled } from "@mui/material/styles";
 import axios from "axios";
-import React, { useContext, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { useSnackbar } from "notistack";
 import "emoji-mart/css/emoji-mart.css";
 import { Picker } from "emoji-mart";
@@ -41,7 +41,8 @@ import CustomAvatar from "../../../Components/CustomAvatar";
 import { UserContext } from "../../../Contexts/AuthContext";
 import UserName from "../../../Components/UserName";
 import MoreVert from "@mui/icons-material/MoreVert";
-
+import Compressor from "compressorjs";
+import PageLoader from "../../../Components/PageLoader";
 const Input = styled("input")({
   display: "none",
 });
@@ -55,6 +56,27 @@ const PostForm = ({ close, refetch }) => {
   const [openMenu, setOpenMenu] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const { currentUser } = useContext(UserContext);
+ 
+
+  const handleCompressedUpload = (e) => {
+     setImage("converting");
+    const image = e.target.files[0];
+    new Compressor(image, {
+      maxWidth:1280,
+      convertSize: Infinity,
+      convertTypes:['image/jpg'],
+      quality: 0.8, // 0.6 can also be used, but its not recommended to go below.
+      success: (compressedResult) => {
+        // compressedResult has the compressed file.
+        // Use the compressed file to upload the images to your server.
+        const myFile = new File([compressedResult], "image.jpeg", {
+          type: compressedResult.type,
+        });
+        setImage(myFile);
+      },
+    });
+  };
+
   const addEmoji = (e) => {
     let sym = e.unified.split("-");
     let codesArray = [];
@@ -80,12 +102,11 @@ const PostForm = ({ close, refetch }) => {
           headers: { "Content-Type": "multipart/form-data" },
         })
           .then((response) => {
-            
             enqueueSnackbar("Status posted", { variant: "success" });
             setText("");
 
             setLoading(false);
-           
+
             close();
           })
           .catch((error) => {
@@ -95,10 +116,10 @@ const PostForm = ({ close, refetch }) => {
 
             setText("");
             close();
-            
-          }).finally(() => {
-             refetch();
           })
+          .finally(() => {
+            refetch();
+          });
       }, 2000);
     }
   };
@@ -111,6 +132,7 @@ const PostForm = ({ close, refetch }) => {
       onClose={() => close()}
       onBackdropClick={() => close()}
     >
+     
       <Card elevation={1} sx={{ m: 0, width: "100%" }}>
         <form
           onSubmit={handlePost}
@@ -168,14 +190,13 @@ const PostForm = ({ close, refetch }) => {
               inputProps={{ sx: { p: 2, pb: 0 } }}
             />
 
-            {image !== null && (
-              <PhotoPreviewer src={URL.createObjectURL(image)} />
-            )}
+            {image==="converting" && <PageLoader/>}
+            {image!==null && image!=="converting" && <PhotoPreviewer src={URL?.createObjectURL(image)} />}
           </CardContent>
           <CardActions sx={{ justifyContent: "space-between", p: 1 }}>
             <label htmlFor="icon-button-file">
               <Input
-                onChange={(e) => setImage(e.currentTarget.files[0])}
+                onChange={(e) =>handleCompressedUpload(e)}
                 accept="image/*"
                 id="icon-button-file"
                 type="file"

@@ -176,6 +176,9 @@ const Profile = () => {
         >
           <CustomAvatar
             sx={{
+              bgcolor: 'primary.main',
+              color: 'white',
+              fontSize:50,
               minWidth: 200,
               minHeight: 200,
               position: "absolute",
@@ -198,9 +201,9 @@ const Profile = () => {
               }}
             >
               {data?.firstName + " " + data?.lastName}
-              <CheckCircle
+              {/* <CheckCircle
                 sx={{ fontSize: 17, ml: 0.5, color: "primary.light" }}
-              />
+              /> */}
             </Typography>
             <Typography variant="subtitle1">{data?.designation}</Typography>
           </Box>

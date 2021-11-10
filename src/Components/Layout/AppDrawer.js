@@ -120,11 +120,11 @@ const FeedLeftSidebar = () => {
             to={`/user/${currentUser?.username || currentUser?.uuId}`}
           >
             {currentUser?.firstName + " " + currentUser?.lastName}{" "}
-            {
+            {/* {
               <CheckCircle
                 sx={{ color: "text.primary", fontSize: "1rem", ml: 0.5 }}
               />
-            }
+            } */}
           </Link>
         }
         subheader={currentUser?.designation}

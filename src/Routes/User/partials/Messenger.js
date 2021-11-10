@@ -8,7 +8,7 @@ import React, {
   useCallback,
 } from "react";
 import { useHistory } from "react-router-dom";
-
+import { useSnackbar } from "notistack";
 import {
   Avatar,
   Fab,
@@ -29,6 +29,7 @@ import {
   CameraAlt,
   CloseOutlined,
   InsertEmoticon,
+  MoreVert,
   Send,
   Videocam,
 } from "@mui/icons-material";
@@ -39,11 +40,12 @@ import { MessengerContext } from "../../../Contexts/MessengerProvider";
 import { SocketContext } from "../../../Contexts/Socket";
 import Typing from "../../../Components/Typing";
 import { Picker } from "emoji-mart";
-const Messenger = ({ user }) => {
+const Messenger = ({ user, main, mainmenu, width, height }) => {
+    const { enqueueSnackbar } = useSnackbar();
   const socket = useContext(SocketContext);
   const [currentChat, setCurrentChat] = useState([]);
   const [conversations, setConversations] = useState([]);
- const [showEmoji, setShowEmoji] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
   const scrollRef = useRef();
   const [newMessage, setNewMessage] = useState("");
   const { currentUser } = useContext(UserContext);
@@ -51,49 +53,54 @@ const Messenger = ({ user }) => {
   const [state, dispatch] = useContext(MessengerContext);
   const [typing, setTyping] = useState(false);
 
-
-    const addEmoji = (e) => {
-      let sym = e.unified.split("-");
-      let codesArray = [];
-      sym.forEach((el) => codesArray.push("0x" + el));
-      let emoji = String.fromCodePoint(...codesArray);
-      setNewMessage((prev) => prev + emoji);
-    };
-
+  const addEmoji = (e) => {
+    let sym = e.unified.split("-");
+    let codesArray = [];
+    sym.forEach((el) => codesArray.push("0x" + el));
+    let emoji = String.fromCodePoint(...codesArray);
+    setNewMessage((prev) => prev + emoji);
+  };
 
   useEffect(() => {
-    socket.on("typing", (payload) => {
-      setTyping(true);
+    socket.on("typing", (typerUser) => {
+      if (typerUser === user.uuId) {
+        setTyping(true);
+      }
     });
+
     if (typing) {
       setTimeout(() => {
         setTyping(false);
       }, 3000);
     }
-  }, [socket, typing, newMessage]);
+  }, [socket, typing, user.uuId]);
 
   const handleTyping = () => {
-    socket.emit("typing", { emitTo: user.uuId, currentUser: currentUser });
+    socket.emit("imtyping", { emitTo: user.uuId });
   };
-
+  
   const fetch = useCallback(async () => {
-    const res = await axios.get("/messages/conversation/", {
-      params: {
-        uuId1: user?.uuId + currentUser?.uuId,
-        uuId2: currentUser?.uuId + user?.uuId,
-      },
-    });
-    console.log("called");
-    setCurrentChat(res.data.currentChat);
-    setConversations(res.data.conversations);
-  }, [currentUser?.uuId, user?.uuId]);
+    if (!main) {
+      const res = await axios.get("/messages/conversation/", {
+        params: {
+          uuId1: user?.uuId + currentUser?.uuId,
+          uuId2: currentUser?.uuId + user?.uuId,
+        },
+      });
+
+      setCurrentChat(res.data.currentChat);
+      setConversations(res.data.conversations);
+    } else {
+      const res = await axios.get(window.location.pathname);
+
+      setCurrentChat(res.data.inbox);
+      setConversations(res.data.messages);
+    }
+  }, [currentUser?.uuId, main, user?.uuId]);
+
 
   useEffect(() => {
     fetch();
-    return () => {
-      setCurrentChat([]);
-      setConversations([]);
-    };
   }, [fetch]);
 
   const SendNewMessage = (e) => {
@@ -133,7 +140,6 @@ const Messenger = ({ user }) => {
           },
         },
         (response) => {
-          
           setConversations((prev) => prev.concat(response));
         }
       );
@@ -178,7 +184,7 @@ const Messenger = ({ user }) => {
       sx={{
         boxShadow: 2,
         bgcolor: "background.paper",
-        width: 350,
+        width: width || 350,
         marginBottom: "5px",
         svg: { fontSize: 20 },
         ".MuiCardHeader-action": {
@@ -206,7 +212,7 @@ const Messenger = ({ user }) => {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          p: "3px 10px",
+          p: "5px 10px",
         }}
         titleTypographyProps={{ sx: { p: 0, lineHeight: "20px" } }}
         avatar={<CustomAvatar user={user} />}
@@ -244,28 +250,45 @@ const Messenger = ({ user }) => {
             >
               <Videocam />
             </Fab>
-            <Fab
-              onClick={() => handleCloseMessenger(user)}
-              sx={{
-                boxShadow: "none",
-                bgcolor: "transparent",
-                color: "white",
-                "&:hover": { bgcolor: "transparent", color: "primary.main" },
-              }}
-              variant="string"
-              color="text.white"
-              size="small"
-            >
-              <CloseOutlined />
-            </Fab>
+            {!mainmenu ? (
+              <Fab
+                onClick={() => handleCloseMessenger(user)}
+                sx={{
+                  boxShadow: "none",
+                  bgcolor: "transparent",
+                  color: "white",
+                  "&:hover": { bgcolor: "transparent", color: "primary.main" },
+                }}
+                variant="string"
+                color="text.white"
+                size="small"
+              >
+                <CloseOutlined />
+              </Fab>
+            ) : (
+              <Fab
+                sx={{
+                  boxShadow: "none",
+                  bgcolor: "transparent",
+                  color: "white",
+                  "&:hover": { bgcolor: "transparent", color: "primary.main" },
+                }}
+                variant="string"
+                color="text.white"
+                size="small"
+              >
+                <MoreVert />
+              </Fab>
+            )}
           </React.Fragment>
         }
       />
 
       <CardContent
         sx={{
+          border: "1px solid #2a2b2c",
           bgcolor: "background.default",
-          height: "350px",
+          height: height || 350,
           width: "100%",
 
           overflow: "auto",
@@ -451,7 +474,7 @@ const Messenger = ({ user }) => {
             justifyContent: "space-between",
           }}
         >
-          <CameraAlt sx={{ mr: 2 }} color="white" />
+          <CameraAlt onClick={()=>enqueueSnackbar('Option Coming Sooon',{variant:'error'})} sx={{ mr: 2 }} color="white" />
           <InsertEmoticon
             onClick={() => setShowEmoji(!showEmoji)}
             sx={{ mr: 2 }}

@@ -7,24 +7,28 @@ import { Fade } from "@mui/material";
 import { UserContext } from "../../Contexts/AuthContext";
 
 const Layout = ({ children }) => {
-  const {currentUser} = useContext(UserContext)
+  
+
   return (
     <React.Fragment>
       <SnackbarProvider
         sx={{
           fontSize: "14px !important",
-          bgcolor: "background.default",
-          ".SnackbarItem-contentRoot": {
-            bgcolor: "background.paper",
-            color: "white",
-          },
+          '.SnackbarItem-variantInfo': {
+            bgcolor:'transparent',boxShadow:'none',padding:'0'
+          }
+          ,
+          '.SnackbarItem-message': {
+            p:0,
+            svg:{display:'none'}
+          }
         }}
         autoHideDuration={2500}
         anchorOrigin={{ horizontal: "left", vertical: "bottom" }}
         maxSnack={10}
         TransitionComponent={Fade}
       >
-        {currentUser?.id && <AppHeader />}
+        <AppHeader />
         <Container
           sx={{
             height: "100%",
@@ -39,7 +43,7 @@ const Layout = ({ children }) => {
         >
           {children}
         </Container>
-        {currentUser?.id && <AppFooter />}
+        <AppFooter />
       </SnackbarProvider>
     </React.Fragment>
   );

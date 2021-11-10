@@ -300,9 +300,9 @@ if (!course) return <PageLoader/>
           <MenuItem onClick={() => handleBuy(course.id)}>
             ONLINE PAYMENT
           </MenuItem>
-          <MenuItem onClick={() => buyWithBalance(course.id)}>
+          {/* <MenuItem onClick={() => buyWithBalance(course.id)}>
             USE ACCOUNT BALANCE
-          </MenuItem>
+          </MenuItem> */}
         </Menu>
 
         <Button

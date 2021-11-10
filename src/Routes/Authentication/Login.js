@@ -48,7 +48,7 @@ const Login = (props) => {
           password: password,
         })
           .then((res) => {
-            console.log(res);
+         
             setLoading(false);
             setSuccess(true);
 
