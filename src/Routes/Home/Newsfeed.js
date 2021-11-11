@@ -2,8 +2,6 @@ import React, {
   useCallback,
   useContext,
   useEffect,
-  useReducer,
-  useRef,
   useState,
 } from "react";
 import Grid from "@mui/material/Grid";
@@ -11,33 +9,30 @@ import FeedLeftSidebar from "./Components/FeedLeftSidebar";
 import FeedRightSidebar from "./Components/FeedRightSidebar";
 import FeedCard from "./Components/FeedCard";
 import { Box } from "@mui/system";
-import { Button, Divider, IconButton, Paper, TextField } from "@mui/material";
+import { Divider, IconButton, Paper, TextField } from "@mui/material";
 import { UserContext } from "../../Contexts/AuthContext";
 import PostForm from "./Components/PostForm";
 import CustomAvatar from "../../Components/CustomAvatar";
-import { loadPostsReducer } from "../../Reducers/PostReducer";
 import PageLoader from "../../Components/PageLoader";
-import useFetch from "../../Hooks/useFetch";
 import {
   EmojiEmotionsOutlined,
   PhotoCamera,
   Send,
   Videocam,
 } from "@mui/icons-material";
-import { Emoji } from "emoji-mart";
 import axios from "axios";
 
 const Newsfeed = () => {
   const { currentUser } = useContext(UserContext);
   const [isPosting, setisPosting] = useState(false);
   const [posts, setPosts] = useState([]);
-  const [offset, setoffset] = useState(5);
+  
 
   const fetchData = useCallback(async () => {
     setPosts("LOADING");
     const resposne = await axios.get("/", {
       params: {
-        offset: 5,
+        offset: 0,
       },
     });
 
